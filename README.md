@@ -1,2 +1,2 @@
 # authz-controller
-Controls Authorization for MTO console
+Controls Authorization for webapp at https://github.com/bnallapeta/poc-authn-authz
