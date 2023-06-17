@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authz-ctrl-deployment
+  labels:
+    app: authz-ctrl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authz-ctrl
+  template:
+    metadata:
+      labels:
+        app: authz-ctrl
+    spec:
+      containers:
+      - name: authz-ctrl
+        image: ghcr.io/bnallapeta/authz-controller:latest
+        ports:
+        - containerPort: 9443

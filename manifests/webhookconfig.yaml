@@ -1,0 +1,16 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: authz-webhook-configuration
+webhooks:
+  - name: authz-webhook.k8s.io
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["namespaces", "tenants"]
+    clientConfig:
+      service:
+        namespace: default
+        name: webhook-service
+        path: "/validate"
