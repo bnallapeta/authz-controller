@@ -31,37 +31,31 @@ func (a *AuthzWebhook) Handle(ctx context.Context, req admission.Request) admiss
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// Core authorization logic
-	// Extract user from request attributes
-	user := req.UserInfo.Username
-	userGroups := req.UserInfo.Groups
-
-	// Authn process with Keycloak
-	// Fetch user roles from Keycloak
-	keycloakserver := ""
-	accessToken := ""
-	userRoles, err := fetchUserRolesFromKeycloak(user, keycloakserver, accessToken)
+	// extract the user's roles and groups from the request
+	userInfo := req.UserInfo
+	userRoles, err := fetchUserRolesFromKeycloak(userInfo.Username, "http://keycloak-server.com", "access-token")
 	if err != nil {
-		log.Error(err, "Unable to fetch roles from Keycloak")
+		log.Error(err, "Unable to fetch user roles from Keycloak")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	// Check if user roles are allowed the requested operation
-	allowed, err := isOperationAllowed(userRoles, userGroups, &obj)
-	if err != nil {
-		log.Error(err, "Could not evaluate user's permissions")
-		return admission.Errored(http.StatusInternalServerError, err)
+	resource := "tenant"
+	verb := string(req.Operation)
+
+	for _, role := range userRoles {
+		allowed, err := isOperationAllowed(role, resource, verb)
+		if err != nil {
+			log.Error(err, "Unable to determine if operation is allowed")
+			return admission.Errored(http.StatusInternalServerError, err)
+		}
+		if allowed {
+			log.Info("Allowing operations")
+			return admission.Allowed("")
+		}
 	}
 
-	// If not allowed, deny the request
-	if !allowed {
-		log.Info("Denying request operation")
-		return admission.Denied("User is not authorized to perform this operation")
-	}
-
-	// If allowed, permit the request
-	log.Info("Allowing operations")
-	return admission.Allowed("")
+	log.Info("Denying operations")
+	return admission.Denied("User does not have permission to perform the operation")
 }
 
 func (a *AuthzWebhook) InjectDecoder(d *admission.Decoder) error {
