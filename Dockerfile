@@ -1,11 +1,24 @@
 # Start from golang base image
-FROM golang:1.20-alpine as builder
+FROM golang:alpine3.18 as builder
+
+# Set ARG for git credentials
+ARG GIT_TOKEN
+ARG GIT_USER
+
+# Install Git
+RUN apk --no-cache add git
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
+# Configure git to use the supplied token
+RUN git config --global url."https://oauth2:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
+
 # Copy go mod and sum files
 COPY go.mod go.sum ./
+
+# Set GOPRIVATE env var
+RUN go env -w GOPRIVATE=github.com/$GIT_USER/*
 
 # Download all dependencies. Dependencies will be cached if the go.mod and the go.sum files are not changed
 RUN go mod download
