@@ -32,8 +32,8 @@ func (a *AuthzWebhook) Handle(ctx context.Context, req admission.Request) admiss
 	}
 
 	// extract the user's roles and groups from the request
-	userInfo := req.UserInfo
-	userRoles, err := fetchUserRolesFromKeycloak(userInfo.Username, "http://keycloak-server.com", "access-token")
+	userName := req.UserInfo.Username
+	userRoles, err := fetchUserRolesFromKeycloak(userName, "http://keycloak-server.com", "access-token")
 	if err != nil {
 		log.Error(err, "Unable to fetch user roles from Keycloak")
 		return admission.Errored(http.StatusInternalServerError, err)
@@ -64,8 +64,23 @@ func (a *AuthzWebhook) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (a *AuthzWebhook) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&v1beta2.Tenant{}).WithValidator(a).Complete()
+	return ctrl.NewWebhookManagedBy(mgr).For(&v1beta2.Tenant{}).Complete()
 }
+
+// func (a *AuthzWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+// 	// TODO: Add your own custom validation logic for create operations here
+// 	return nil, nil
+// }
+
+// func (a *AuthzWebhook) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+// 	// TODO: Add your own custom validation logic for update operations here
+// 	return nil, nil
+// }
+
+// func (a *AuthzWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+// 	// TODO: Add your own custom validation logic for delete operations here
+// 	return nil, nil
+// }
 
 func fetchUserRolesFromKeycloak(username string, keycloakServer string, accessToken string) ([]string, error) {
 	req, err := http.NewRequest("GET", keycloakServer+"/auth/admin/realms/poc-realm/users/"+username+"/role-mappings", nil)
