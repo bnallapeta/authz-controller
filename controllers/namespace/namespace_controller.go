@@ -1,4 +1,4 @@
-package namespace
+package controllers
 
 import (
 	"context"
